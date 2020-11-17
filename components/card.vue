@@ -17,10 +17,6 @@
         isDragging: boolean;
         startPosition: { x: number, y: number};
         style?: HtmlElementStyle;
-
-        onMouseDown: (evt: Event) => void;
-        onMouseMove: (evt: Event) => void;
-        onMouseUp: (evt?: Event) => void;
     }
 
     export default Vue.extend({
@@ -30,15 +26,11 @@
         {
             return {
                 isDragging: false,
-                startPosition: { x: 0, y: 0 },
-
-                onMouseDown: (evt: Event): void => this.startDrag(evt as MouseEvent),
-                onMouseMove: (evt: Event): void => this.drag(evt as MouseEvent),
-                onMouseUp: (evt?: Event): void => this.stopDrag(evt as MouseEvent)
+                startPosition: { x: 0, y: 0 }
             };
         },
 
-        mounted: function()
+        mounted: function(): void
         {
             this.style = new HtmlElementStyle(this.$el as HTMLElement);
 
@@ -47,7 +39,7 @@
 
             this.$el.addEventListener("mousedown", this.onMouseDown, { passive: true });
         },
-        destroyed: function()
+        destroyed: function(): void
         {
             this.$el.removeEventListener("mousedown", this.onMouseDown);
 
@@ -56,15 +48,16 @@
         },
 
         methods: {
-            startDrag(evt: MouseEvent)
+            _startDrag(evt: MouseEvent): void
             {
                 if (!this.isDragging)
                 {
-                    this.isDragging = true;
                     this.startPosition = { x: evt.clientX, y: evt.clientY };
+
+                    this.isDragging = true;
                 }
             },
-            drag(evt: MouseEvent)
+            _drag(evt: MouseEvent): void
             {
                 if (this.isDragging)
                 {
@@ -73,26 +66,24 @@
                     const X = currentPosition.x - this.startPosition.x;
                     const Y = currentPosition.y - this.startPosition.y;
 
-                    this.style!.transform.translate.X = X;
-                    this.style!.transform.translate.Y = Y;
-                    this.style!.transform.rotate.X = -Y / 25;
-                    this.style!.transform.rotate.Y = X / 25;
-                    this.style!.transform.rotate.Z = X / 50;
+                    this.style!.transform.translate.set({ X, Y });
+                    this.style!.transform.rotate.set({ X: Y / 25, Y: X / 25, Z: X / 50 });
                 }
             },
-            stopDrag(evt?: MouseEvent)
+            _stopDrag(evt: MouseEvent): void
             {
                 if (this.isDragging)
                 {
                     this.isDragging = false;
 
-                    this.style!.transform.translate.X = 0;
-                    this.style!.transform.translate.Y = 0;
-                    this.style!.transform.rotate.X = 0;
-                    this.style!.transform.rotate.Y = 0;
-                    this.style!.transform.rotate.Z = 0;
+                    this.style!.transform.translate.set(null);
+                    this.style!.transform.rotate.set(null);
                 }
-            }
+            },
+
+            onMouseDown(evt: Event): void { this._startDrag(evt as MouseEvent); },
+            onMouseMove(evt: Event): void { this._drag(evt as MouseEvent); },
+            onMouseUp(evt?: Event): void { this._stopDrag(evt as MouseEvent); }
         }
     });
 </script>
@@ -116,7 +107,6 @@
         {
             box-shadow: 0px 0px 50px 0px rgba(0, 0, 0, 0.25);
             cursor: grabbing;
-            transform: rotate(2.5deg) translateX(7.5px) translateY(-5px);
         }
 
         & > .card-content
