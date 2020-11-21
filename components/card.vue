@@ -15,7 +15,8 @@
     interface CardData
     {
         isDragging: boolean;
-        startPosition: { x: number, y: number};
+        startPosition: { x: number, y: number };
+
         style?: HtmlElementStyle;
     }
 
@@ -76,8 +77,7 @@
                 {
                     this.isDragging = false;
 
-                    this.style!.transform.translate.set(null);
-                    this.style!.transform.rotate.set(null);
+                    this.style!.transform.set(null);
                 }
             },
 
