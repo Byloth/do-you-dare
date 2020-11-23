@@ -34,6 +34,8 @@
         mounted: function(): void
         {
             this.style = new HtmlElementStyle(this.$el as HTMLElement);
+            this.style.transition.boxShadow.set({ duration: 200, timingFunction: "ease-in-out" });
+            this.style.transition.transform.timingFunction = "ease-in-out";
 
             window.addEventListener("mouseup", this.onMouseUp, { passive: true });
             window.addEventListener("mousemove", this.onMouseMove, { passive: true });
@@ -56,6 +58,8 @@
                     this.startPosition = { x: evt.clientX, y: evt.clientY };
 
                     this.isDragging = true;
+
+                    this.style!.transition.transform.duration = null;
                 }
             },
             _drag(evt: MouseEvent): void
@@ -77,6 +81,7 @@
                 {
                     this.isDragging = false;
 
+                    this.style!.transition.transform.duration = 200;
                     this.style!.transform.set(null);
                 }
             },

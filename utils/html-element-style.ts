@@ -1,7 +1,3 @@
-export interface Axes3D { x?: number | null; y?: number | null; z?: number | null; unit?: string }
-export interface Transform { rotate?: Axes3D | null, translate?: Axes3D | null }
-export interface Transition { boxShadow: any; transform: any }
-
 export class BaseStyle
 {
     protected _element: HTMLElement;
@@ -12,7 +8,8 @@ export class BaseStyle
     }
 }
 
-export class Axes3DValue extends BaseStyle implements Axes3D
+export interface IAxes3DValue { x?: number | null; y?: number | null; z?: number | null; unit?: string }
+export class Axes3DValue extends BaseStyle implements IAxes3DValue
 {
     public static readonly DEFAULT_UNIT = "px";
 
@@ -83,7 +80,7 @@ export class Axes3DValue extends BaseStyle implements Axes3D
 
         this._setter = (coord: string, value: number | null): void =>
         {
-            const matchingRegexp = new RegExp(`${name}${coord}\\(([-0-9\\.]*?)(\\w*?)\\)`, "g");
+            const matchingRegexp = new RegExp(`${name}${coord}\\(([-0-9\\.]+)([a-z]+)\\)`, "gi");
             const propertyValue = element.style.getPropertyValue(property);
 
             const replacingValue = (value !== null) ? `${name}${coord}(${value}${this._unit})` : "";
@@ -91,7 +88,7 @@ export class Axes3DValue extends BaseStyle implements Axes3D
             const matches = matchingRegexp.exec(propertyValue);
             if (matches)
             {
-                const replacedValue = propertyValue.replace(matchingRegexp, replacingValue).trim();
+                const replacedValue = propertyValue.replace(matchingRegexp, replacingValue).replace(/^\s|\s$/gi, "");
 
                 if (propertyValue !== replacedValue)
                 {
@@ -100,7 +97,7 @@ export class Axes3DValue extends BaseStyle implements Axes3D
             }
             else
             {
-                const replacedValue = `${propertyValue} ${replacingValue}`.trim();
+                const replacedValue = `${propertyValue} ${replacingValue}`.replace(/^\s|\s$/gi, "");
 
                 if (propertyValue !== replacedValue)
                 {
@@ -110,11 +107,11 @@ export class Axes3DValue extends BaseStyle implements Axes3D
         };
     }
 
-    public get(): Axes3D
+    public get(): IAxes3DValue
     {
         return { x: this._x, y: this._y, z: this._z, unit: this._unit };
     }
-    public set(axes: Axes3D | null)
+    public set(axes: IAxes3DValue | null): void
     {
         if (axes === null) { axes = { x: null, y: null, z: null }; }
         if (axes.unit !== undefined) { this._unit = axes.unit; }
@@ -124,7 +121,8 @@ export class Axes3DValue extends BaseStyle implements Axes3D
     }
 }
 
-export class TransformProperty extends BaseStyle implements Transform
+export interface ITransformProperty { rotate?: IAxes3DValue | null, translate?: IAxes3DValue | null }
+export class TransformProperty extends BaseStyle implements ITransformProperty
 {
     public readonly rotate: Axes3DValue;
     public readonly translate: Axes3DValue;
@@ -137,11 +135,11 @@ export class TransformProperty extends BaseStyle implements Transform
         this.translate = new Axes3DValue(element, "transform", "translate");
     }
 
-    public get(): Transform
+    public get(): ITransformProperty
     {
         return { rotate: this.rotate.get(), translate: this.translate.get() };
     }
-    public set(transform: Transform | null)
+    public set(transform: ITransformProperty | null): void
     {
         if (transform === null) { transform = { rotate: null, translate: null }; }
         if (transform.rotate !== undefined) { this.rotate.set(transform.rotate); }
@@ -149,39 +147,104 @@ export class TransformProperty extends BaseStyle implements Transform
     }
 }
 
-export class TransitionValue extends BaseStyle
+export interface ITransitionValue { duration?: number | null; timingFunction?: string; delay?: number; unit?: string }
+export class TransitionValue extends BaseStyle implements ITransitionValue
 {
-    public static readonly DEFAULT_DURATION = 400;
     public static readonly DEFAULT_TIMING_FUNCTION = "linear";
     public static readonly DEFAULT_DELAY = 0;
     public static readonly DEFAULT_UNIT = "ms";
 
-    protected _setter: (value: number | null) => void;
+    protected _duration: number | null;
 
-    public duration: number;
-    public timingFunction: string;
-    public delay: number;
-    public unit: string;
+    protected _timingFunction: string;
+    protected _delay: number;
+    protected _unit: string;
+
+    protected _setter: () => void;
+
+    public get duration(): number | null
+    {
+        return this._duration;
+    }
+    public set duration(value: number | null)
+    {
+        this._duration = value;
+
+        this._setter();
+    }
+
+    public get timingFunction(): string
+    {
+        return this._timingFunction;
+    }
+    public set timingFunction(value: string)
+    {
+        this._timingFunction = value;
+
+        this._setter();
+    }
+
+    public get delay(): number
+    {
+        return this._delay;
+    }
+    public set delay(value: number)
+    {
+        this._delay = value;
+
+        this._setter();
+    }
+
+    public get unit(): string
+    {
+        return this._unit;
+    }
+    public set unit(value: string)
+    {
+        this._unit = value;
+
+        this._setter();
+    }
 
     public constructor(element: HTMLElement, property: string, name: string,
-        duration = TransitionValue.DEFAULT_DURATION,
         timingFunction = TransitionValue.DEFAULT_TIMING_FUNCTION,
         delay = TransitionValue.DEFAULT_DELAY,
         unit = TransitionValue.DEFAULT_UNIT)
     {
         super(element);
 
-        this._setter = (value: number | null): void =>
+        const matchingRegexp = new RegExp(`${name} ([0-9\\.]+)([a-z]+)(?: ([a-z-]+))?(?: ([0-9\\.]+)([a-z]+))?`, "gi");
+
+        this._duration = 0;
+
+        this._timingFunction = timingFunction;
+        this._delay = delay;
+        this._unit = unit;
+
+        this._setter = (): void =>
         {
-            const matchingRegexp = new RegExp(`${name}${coord}\\(([-0-9\\.]*?)(\\w*?)\\)`, "g");
             const propertyValue = element.style.getPropertyValue(property);
 
-            const replacingValue = (value !== null) ? `${name}${coord}(${value}${this._unit})` : "";
+            let replacingValue = "";
+
+            if (this._duration !== null)
+            {
+                replacingValue = `${name} ${this._duration}${this._unit}`;
+
+                if (this._timingFunction !== TransitionValue.DEFAULT_TIMING_FUNCTION)
+                {
+                    replacingValue += ` ${this._timingFunction}`;
+                }
+                if (this._delay !== TransitionValue.DEFAULT_DELAY)
+                {
+                    replacingValue += ` ${this._delay}${this._unit}`;
+                }
+            }
 
             const matches = matchingRegexp.exec(propertyValue);
             if (matches)
             {
-                const replacedValue = propertyValue.replace(matchingRegexp, replacingValue).trim();
+                const replacedValue = propertyValue.replace(matchingRegexp, replacingValue).replace(/^,\s|,\s$/gi, "");
 
                 if (propertyValue !== replacedValue)
                 {
@@ -190,7 +253,7 @@ export class TransitionValue extends BaseStyle
             }
             else
             {
-                const replacedValue = `${propertyValue} ${replacingValue}`.trim();
+                const replacedValue = `${propertyValue}, ${replacingValue}`.replace(/^,\s|,\s$/gi, "");
 
                 if (propertyValue !== replacedValue)
                 {
@@ -198,15 +261,26 @@ export class TransitionValue extends BaseStyle
                 }
             }
         };
+    }
 
-        this.duration = duration;
-        this.timingFunction = timingFunction;
-        this.delay = delay;
-        this.unit = unit;
+    public get(): ITransitionValue
+    {
+        return { duration: this._duration, timingFunction: this._timingFunction, delay: this._delay, unit: this._unit };
+    }
+    public set(transition: ITransitionValue | null): void
+    {
+        if (transition === null) { transition = { duration: null }; }
+        if (transition.duration !== undefined) { this._duration = transition.duration; }
+        if (transition.timingFunction !== undefined) { this._timingFunction = transition.timingFunction; }
+        if (transition.delay !== undefined) { this._delay = transition.delay; }
+        if (transition.unit !== undefined) { this._unit = transition.unit; }
+
+        this._setter();
     }
 }
 
-export class TransitionProperty extends Array<any> implements Transition
+export interface ITransitionProperty { boxShadow?: ITransitionValue | null; transform?: ITransitionValue | null }
+export class TransitionProperty extends BaseStyle implements ITransitionProperty
 {
     public readonly boxShadow: TransitionValue;
     public readonly transform: TransitionValue;
@@ -219,15 +293,20 @@ export class TransitionProperty extends Array<any> implements Transition
         this.transform = new TransitionValue(element, "transition", "transform");
     }
 
-    [position: number]: any;
-
-    public length: number;
-    public push(item: any): number {
-        throw new Error("Method not implemented.");
+    public get(): ITransitionProperty
+    {
+        return { boxShadow: this.boxShadow.get(), transform: this.transform.get() };
+    }
+    public set(transition: ITransitionProperty | null): void
+    {
+        if (transition === null) { transition = { boxShadow: null, transform: null }; }
+        if (transition.boxShadow !== undefined) { this.boxShadow.set(transition.boxShadow); }
+        if (transition.transform !== undefined) { this.transform.set(transition.transform); }
     }
 }
 
-export default class HTMLElementStyle extends BaseStyle
+export interface IHTMLElementStyle { transform?: ITransformProperty | null; transition?: ITransitionProperty | null }
+export default class HTMLElementStyle extends BaseStyle implements IHTMLElementStyle
 {
     public readonly transform: TransformProperty;
     public readonly transition: TransitionProperty;
@@ -238,5 +317,16 @@ export default class HTMLElementStyle extends BaseStyle
 
         this.transform = new TransformProperty(element);
         this.transition = new TransitionProperty(element);
+    }
+
+    public get(): IHTMLElementStyle
+    {
+        return { transform: this.transform.get(), transition: this.transition.get() };
+    }
+    public set(style: IHTMLElementStyle): void
+    {
+        if (style === null) { style = { transform: null, transition: null }; }
+        if (style.transform !== undefined) { this.transform.set(style.transform); }
+        if (style.transition !== undefined) { this.transition.set(style.transition); }
     }
 }
