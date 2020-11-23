@@ -64,11 +64,11 @@
                 {
                     const currentPosition = { x: evt.clientX, y: evt.clientY };
 
-                    const X = currentPosition.x - this.startPosition.x;
-                    const Y = currentPosition.y - this.startPosition.y;
+                    const x = currentPosition.x - this.startPosition.x;
+                    const y = currentPosition.y - this.startPosition.y;
 
-                    this.style!.transform.translate.set({ X, Y });
-                    this.style!.transform.rotate.set({ X: Y / 25, Y: X / 25, Z: X / 50 });
+                    this.style!.transform.translate.set({ x, y });
+                    this.style!.transform.rotate.set({ x: y / 25, y: x / 25, z: x / 50 });
                 }
             },
             _stopDrag(evt: MouseEvent): void
