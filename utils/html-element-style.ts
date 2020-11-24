@@ -1,4 +1,4 @@
-export class BaseStyle
+export abstract class BaseStyle<T>
 {
     protected _element: HTMLElement;
 
@@ -6,10 +6,13 @@ export class BaseStyle
     {
         this._element = element;
     }
+
+    public abstract get(): T;
+    public abstract set(value: T | null): void;
 }
 
 export interface IAxes3DValue { x?: number | null; y?: number | null; z?: number | null; unit?: string }
-export class Axes3DValue extends BaseStyle implements IAxes3DValue
+export class Axes3DValue extends BaseStyle<IAxes3DValue> implements IAxes3DValue
 {
     public static readonly DEFAULT_UNIT = "px";
 
@@ -122,7 +125,7 @@ export class Axes3DValue extends BaseStyle implements IAxes3DValue
 }
 
 export interface ITransformProperty { rotate?: IAxes3DValue | null, translate?: IAxes3DValue | null }
-export class TransformProperty extends BaseStyle implements ITransformProperty
+export class TransformProperty extends BaseStyle<ITransformProperty> implements ITransformProperty
 {
     public readonly rotate: Axes3DValue;
     public readonly translate: Axes3DValue;
@@ -148,7 +151,7 @@ export class TransformProperty extends BaseStyle implements ITransformProperty
 }
 
 export interface ITransitionValue { duration?: number | null; timingFunction?: string; delay?: number; unit?: string }
-export class TransitionValue extends BaseStyle implements ITransitionValue
+export class TransitionValue extends BaseStyle<ITransitionValue> implements ITransitionValue
 {
     public static readonly DEFAULT_TIMING_FUNCTION = "linear";
     public static readonly DEFAULT_DELAY = 0;
@@ -280,7 +283,7 @@ export class TransitionValue extends BaseStyle implements ITransitionValue
 }
 
 export interface ITransitionProperty { boxShadow?: ITransitionValue | null; transform?: ITransitionValue | null }
-export class TransitionProperty extends BaseStyle implements ITransitionProperty
+export class TransitionProperty extends BaseStyle<ITransitionProperty> implements ITransitionProperty
 {
     public readonly boxShadow: TransitionValue;
     public readonly transform: TransitionValue;
@@ -306,17 +309,29 @@ export class TransitionProperty extends BaseStyle implements ITransitionProperty
 }
 
 export interface IHTMLElementStyle { transform?: ITransformProperty | null; transition?: ITransitionProperty | null }
-export default class HTMLElementStyle extends BaseStyle implements IHTMLElementStyle
-{
-    public readonly transform: TransformProperty;
-    public readonly transition: TransitionProperty;
 
-    public constructor(element: HTMLElement)
+export default class HTMLElementStyle extends BaseStyle<IHTMLElementStyle> // implements IHTMLElementStyle
+{
+    // public readonly transform: TransformProperty;
+    // public readonly transition: TransitionProperty;
+
+    public constructor(element: HTMLElement, propertyToEnable: { [key: string]: new(element: HTMLElement) => object })
     {
         super(element);
 
-        this.transform = new TransformProperty(element);
-        this.transition = new TransitionProperty(element);
+        propertyToEnable = { "transform": TransformProperty, "transition": TransitionProperty };
+
+        for (const key in propertyToEnable)
+        {
+            const Class: new(element: HTMLElement) => Object = propertyToEnable[key];
+
+            this[key] = new Class(element);
+        }
+
+        console.log(this);
+
+        // this.transform = new TransformProperty(element);
+        // this.transition = new TransitionProperty(element);
     }
 
     public get(): IHTMLElementStyle
@@ -329,4 +344,7 @@ export default class HTMLElementStyle extends BaseStyle implements IHTMLElementS
         if (style.transform !== undefined) { this.transform.set(style.transform); }
         if (style.transition !== undefined) { this.transition.set(style.transition); }
     }
+
+    // eslint-disable-next-line no-undef
+    [key: string]: object;
 }

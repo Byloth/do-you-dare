@@ -37,6 +37,8 @@
             this.style.transition.boxShadow.set({ duration: 200, timingFunction: "ease-in-out" });
             this.style.transition.transform.timingFunction = "ease-in-out";
 
+            console.log(this.style);
+
             window.addEventListener("mouseup", this.onMouseUp, { passive: true });
             window.addEventListener("mousemove", this.onMouseMove, { passive: true });
 
