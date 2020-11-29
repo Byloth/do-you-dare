@@ -22,6 +22,7 @@
     "lint": "eslint --ext .js,.json,.ts,.vue --ignore-path .gitignore ."
   },
   "dependencies": {
+    "@byloth/html-element-style": "^1.0.0",
     "@nuxt/content": "^1.10.0",
     "@nuxt/typescript-runtime": "^2.0.0",
     "@nuxtjs/axios": "^5.12.2",

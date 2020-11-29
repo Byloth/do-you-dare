@@ -10,7 +10,7 @@
 <script lang="ts">
     import Vue from "vue";
 
-    import HtmlElementStyle from "@/utils/html-element-style";
+    import HtmlElementStyle from "@byloth/html-element-style";
 
     interface CardData
     {
@@ -33,11 +33,9 @@
 
         mounted: function(): void
         {
-            this.style = new HtmlElementStyle(this.$el as HTMLElement);
-            this.style.transition.boxShadow.set({ duration: 200, timingFunction: "ease-in-out" });
-            this.style.transition.transform.timingFunction = "ease-in-out";
-
-            console.log(this.style);
+            this.style = new HtmlElementStyle(this.$el as HTMLElement, ["transform", "transition"]);
+            this.style.transition!.boxShadow.set({ duration: 200, timingFunction: "ease-in-out" });
+            this.style.transition!.transform.timingFunction = "ease-in-out";
 
             window.addEventListener("mouseup", this.onMouseUp, { passive: true });
             window.addEventListener("mousemove", this.onMouseMove, { passive: true });
@@ -61,7 +59,7 @@
 
                     this.isDragging = true;
 
-                    this.style!.transition.transform.duration = null;
+                    this.style!.transition!.transform.duration = null;
                 }
             },
             _drag(evt: MouseEvent): void
@@ -73,8 +71,8 @@
                     const x = currentPosition.x - this.startPosition.x;
                     const y = currentPosition.y - this.startPosition.y;
 
-                    this.style!.transform.translate.set({ x, y });
-                    this.style!.transform.rotate.set({ x: y / 25, y: x / 25, z: x / 50 });
+                    this.style!.transform!.translate.set({ x, y });
+                    this.style!.transform!.rotate.set({ x: y / 25, y: x / 25, z: x / 50 });
                 }
             },
             _stopDrag(evt: MouseEvent): void
@@ -83,8 +81,8 @@
                 {
                     this.isDragging = false;
 
-                    this.style!.transition.transform.duration = 200;
-                    this.style!.transform.set(null);
+                    this.style!.transition!.transform.duration = 200;
+                    this.style!.transform!.set(null);
                 }
             },
 
